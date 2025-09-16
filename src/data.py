@@ -1,7 +1,39 @@
 import os
 import pandas as pd
 import torch
+import re
+from konlpy.tag import Okt
 
+# ================================================================== #
+# 1. 전처리 함수 및 Okt 객체 정의
+# Okt 객체는 로딩에 시간이 걸리므로 스크립트 상단에서 한 번만 생성.
+# ================================================================== #
+okt = Okt()
+
+def preprocess_and_clean(text):
+    """
+    input 컬럼의 텍스트를 정제하는 함수.
+    1. '&...&' 형태의 특수기호 및 기타 불필요한 문자 제거
+    2. Okt 형태소 분석을 통한 불용어 제거
+    """
+    if not isinstance(text, str):
+        return "" # 혹시 모를 비문자열 데이터 처리
+
+    # 1단계: 정규 표현식을 이용한 특수기호 제거
+    # &word&, &word.. 와 같은 패턴 제거
+    text = re.sub(r'&\w+&', '', text)
+    # 한글, 영어, 숫자, 공백을 제외한 모든 문자 제거
+    text = re.sub(r'[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9\s]', '', text)
+    
+    # 2단계: Okt 형태소 분석 및 불용어(조사, 어미, 구두점) 제거
+    clean_words = []
+    for word, pos in okt.pos(text, stem=True): 
+        if pos not in ['Josa', 'Eomi', 'Punctuation']:
+            clean_words.append(word)
+            
+    return ' '.join(clean_words)
+
+# ============================ 전처리 및 데이터 정리 추가완료 ====== #
 
 class hate_dataset(torch.utils.data.Dataset):
     """dataframe을 torch dataset class로 변환"""

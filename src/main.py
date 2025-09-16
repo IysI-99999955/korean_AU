@@ -81,7 +81,7 @@ def parse_args():
 if __name__ == "__main__":
     os.environ["TOKENIZERS_PARALLELISM"] = "false"  # tokenizer 사용 시 warning 방지
     args = parse_args()
-    wandb.init(project="ssac", name=args.run_name)  # 프로젝트 이름 설정
+    wandb.init(project="ssac_NIKL_AU", name=args.run_name)  # 프로젝트 이름 설정
     train(args)
 
 # .sh 
