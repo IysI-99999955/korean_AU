@@ -34,7 +34,7 @@ def construct_tokenized_dataset(dataset, tokenizer, max_length):
     print(dataset["input"][:5])
 
     tokenized_senetences = tokenizer(
-        dataset["input"].tolist(),
+        dataset["input"].fillna("").tolist(),
         return_tensors="pt",
         padding=True,
         truncation=True,
