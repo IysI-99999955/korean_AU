@@ -1,8 +1,8 @@
 import pytorch_lightning as pl
 import torch
-from src.utils import compute_metrics
-# from .utils import compute_metrics
-from data import prepare_dataset
+# from src.utils import compute_metrics
+from .utils import compute_metrics
+from .data import prepare_dataset
 
 from transformers import (
     AutoTokenizer,

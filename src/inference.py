@@ -5,8 +5,8 @@ import os
 
 import numpy as np
 from tqdm import tqdm
-from model import load_model_for_inference
-from data import prepare_dataset
+from .model import load_model_for_inference
+from .data import prepare_dataset
 
 def inference(model, tokenized_sent, device):
     """학습된(trained) 모델을 통해 결과를 추론하는 function"""
