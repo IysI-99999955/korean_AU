@@ -32,7 +32,7 @@ pyenv virtualenv $PYTHON_VERSION "$VENV_NAME" && echo "Virtual environment '$VEN
 pyenv activate "$VENV_NAME" && echo "Virtual environment '$VENV_NAME' activated."
 
 # Git 리포지토리 클론 (환경 변수로 URL 받아오기)
-if [ -z "$GIT_REPO_URL" ]; then
+if [ -z "$GIT_REPO_URL="https://github.com/IysI-99999955/korean_AU.git" bash full_install.sh" ]; then
     echo "Error: Please set the GIT_REPO_URL environment variable to the repository you want to clone."
     exit 1
 fi
