@@ -65,10 +65,7 @@ def load_trainer_for_train(args, model, hate_train_dataset, hate_valid_dataset):
         load_best_model_at_end=True,
         report_to="wandb",  # W&B 로깅 활성화
         run_name=args.run_name,  # run_name 지정
-        
-        # GCP에서 오류나서 아래 옵션 추가
-        fp16=False,   # <--- fp16은 False로 설정하거나 삭제
-        bf16=True,    # <--- bf16을 True로 설정
+
     )
 
     ## Add callback & optimizer & scheduler
