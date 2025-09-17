@@ -167,4 +167,3 @@ cython_debug/
 # add more
 .csv
 .jsonl
-convert_jsonl_to_csv.py
