@@ -12,7 +12,12 @@ class hate_dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         item = {key: val[idx].clone().detach() for key, val in self.dataset.items()}
-        item["labels"] = torch.tensor(self.labels[idx])
+        
+        try:
+            item["labels"] = torch.tensor(self.labels[idx])
+        except Exception:
+            pass
+        
         return item
 
     def __len__(self):
