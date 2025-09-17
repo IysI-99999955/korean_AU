@@ -70,7 +70,7 @@ def load_trainer_for_train(args, model, hate_train_dataset, hate_valid_dataset):
 
     ## Add callback & optimizer & scheduler
     MyCallback = EarlyStoppingCallback(
-        early_stopping_patience=10, early_stopping_threshold=0.001
+        early_stopping_patience=3, early_stopping_threshold=0.001
     )
 
     optimizer = torch.optim.AdamW(
