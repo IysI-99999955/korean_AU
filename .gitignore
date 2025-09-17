@@ -167,3 +167,6 @@ cython_debug/
 # add more
 .csv
 .jsonl
+
+# 데이터셋 폴더 제외
+NIKL_AU_2023_COMPETITION_v1.0/
