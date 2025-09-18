@@ -65,7 +65,7 @@ def load_trainer_for_train(args, model, hate_train_dataset, hate_valid_dataset):
         load_best_model_at_end=True,
         report_to="wandb",  # W&B 로깅 활성화
         run_name=args.run_name,  # run_name 지정
-
+        dataloader_num_workers=8  # # GCP VM의 CPU 노예 8 활성화
     )
 
     ## Add callback & optimizer & scheduler
