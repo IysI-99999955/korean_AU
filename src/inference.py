@@ -18,8 +18,10 @@ def inference(model, tokenized_sent, device):
             outputs = model(
                 input_ids=data["input_ids"].to(device),
                 attention_mask=data["attention_mask"].to(device),
-                token_type_ids=data["token_type_ids"].to(device)  # beomi/kcbert-base 테스트하며 이 줄 추가!
             )
+
+
+            
         logits = outputs[0]
         logits = logits.detach().cpu().numpy()
         result = np.argmax(logits, axis=-1)
