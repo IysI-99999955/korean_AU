@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 import torch
+
 # from src.utils import compute_metrics
 from .utils import compute_metrics
 from .data import prepare_dataset
@@ -20,6 +21,32 @@ def load_tokenizer_and_model_for_train(args):
     MODEL_NAME = args.model_name
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
+    #  (추가)
+    special_tokens = [
+        "&location&",
+        "&affiliation&",
+        "&name&",
+        "&company&",
+        "&brand&",
+        "&art&",
+        "&other&",
+        "&nama&",
+        "&affifiation&",
+        "&online-account&",
+        "&name",
+        "&compnay&",
+        "&anme&",
+        "& name&",
+        "&address&",
+        "&tel-num&",
+        "&naem&",
+    ]
+    tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
+
+    #  (추가)
+    print("토큰 추가 확인: ", tokenizer.convert_tokens_to_ids(special_tokens))
+    print("늘어난 토큰 크기: ", len(tokenizer))  # 토큰 크기 늘어난 것 확인. 원래 32000
+
     # setting model hyperparameter
     model_config = AutoConfig.from_pretrained(MODEL_NAME)
     model_config.num_labels = 2
@@ -28,14 +55,47 @@ def load_tokenizer_and_model_for_train(args):
     model = AutoModelForSequenceClassification.from_pretrained(
         MODEL_NAME, config=model_config
     )
+
+    # 임베딩 모델 조정 (추가)
+    model.resize_token_embeddings(len(tokenizer))
+    print("----임베딩 레이어 크기 조정 완료----")
+
     print("--- Modeling Done ---")
     return tokenizer, model
 
-def load_model_for_inference(model_name,model_dir):
-    """추론(infer)에 필요한 모델과 토크나이저 load """
+
+def load_model_for_inference(model_name, model_dir):
+    """추론(infer)에 필요한 모델과 토크나이저 load"""
     # load tokenizer
     Tokenizer_NAME = model_name
     tokenizer = AutoTokenizer.from_pretrained(Tokenizer_NAME)
+
+    #  (추가)
+    special_tokens = [
+        "&location&",
+        "&affiliation&",
+        "&name&",
+        "&company&",
+        "&brand&",
+        "&art&",
+        "&other&",
+        "&nama&",
+        "&affifiation&",
+        "&online-account&",
+        "&name",
+        "&compnay&",
+        "&anme&",
+        "& name&",
+        "&address&",
+        "&tel-num&",
+        "&naem&",
+    ]
+
+    tokenizer.add_special_tokens({"additional_special_tokens": special_tokens})
+
+    #  (추가)
+    print("토큰 추가 확인: ", tokenizer.convert_tokens_to_ids(special_tokens))
+    print("늘어난 토큰 크기: ", len(tokenizer))  # 토큰 크기 늘어난 것 확인. 원래 32000
 
     ## load my model
     model = AutoModelForSequenceClassification.from_pretrained(model_dir)
@@ -65,7 +125,7 @@ def load_trainer_for_train(args, model, hate_train_dataset, hate_valid_dataset):
         load_best_model_at_end=True,
         report_to="wandb",  # W&B 로깅 활성화
         run_name=args.run_name,  # run_name 지정
-        dataloader_num_workers=8  # # GCP VM의 CPU 노예 8 활성화
+        dataloader_num_workers=8,  # # GCP VM의 CPU 노예 8 활성화
     )
 
     ## Add callback & optimizer & scheduler
