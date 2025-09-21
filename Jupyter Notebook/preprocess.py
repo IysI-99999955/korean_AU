@@ -1,111 +1,138 @@
-# preprocess.py (slang_dic 사전 제거, PyTorch 교정 모델 최종 버전)
+# preprocess.py 4차 slang_dic 추가, 
 
 import pandas as pd
 import os
 import re
 from tqdm import tqdm
-import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 # pandas의 progress_apply를 사용하기 위한 설정
 tqdm.pandas()
 
-# [수정] 안정적인 최신 PyTorch 기반 맞춤법/띄어쓰기 교정 모델 로딩
-print("PyTorch 맞춤법/띄어쓰기 교정 모델을 로딩합니다... (시간이 소요될 수 있습니다)")
-MODEL_NAME = "paust/pko-t5-base"  # PyKoSpacing 대체...
-SPELLING_MODEL_LOADED = False
-try:
-    spelling_tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    spelling_model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+# 한국어 신조어, 혐오, 욕설 및 오타 사전, 필요시 추가, 모음 1글자는 추가하지 말 것.
+slang_dic = {
+    # 필요시 추가, "대상":"설명" 순으로 추가하면 됨. 구분자는 comma
+    "ㅋㅋ": "웃음", "ㅎㅎ": "웃음", "ㅠㅠ": "슬픔", "ㅇㅇ": "응", "ㅇㅋ": "오케이", "ㄱㅅ": "감사", "ㅈㅅ": "죄송",
+    "JMT": "매우 맛있다", "존맛": "매우 맛있다", "개꿀": "매우 좋다", "꿀잼": "매우 재미있다",
+    "한남": "한국 남자", "한녀": "한국 여자", "맘충": "아이 엄마 비하", "틀딱": "노인 비하",
+    "새끼": "녀석", "지랄": "헛소리", "병신": "바보", "시발": "욕설",
+    "않되": "안돼", "되요": "돼요", "됬다": "됐다", "어떻해": "어떡해",
+    "ㅗㅗ": "모욕", "ㅗㅜㅑ": "놀람",
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    spelling_model.to(device)
-    print(f"모델 로딩 완료. Device: {device}")
-    SPELLING_MODEL_LOADED = True
-except Exception as e:
-    print(
-        f"경고: 맞춤법 교정 모델 '{MODEL_NAME}'을 로드할 수 없습니다. 맞춤법 교정을 건너뜁니다. 오류: {e}"
-    )
+    # 추가된 자음/모음 조합 및 이모티콘
+    "ㅋㅋㅋ": "웃음", "ㅋㅋㅋㅋ": "웃음", "ㄷㄷ": "놀람", "ㅁㄴ": "몰라", "ㅂㅂ": "안녕",
+    "ㅅㅂ": "욕설", "ㅆㅂ": "욕설", "ㅄ": "욕설", "ㅗ하하": "웃음",
+    "ㅜㅜ": "슬픔", "ㅡㅡ": "짜증", "ㅊㅊ": "축하", "ㄴㄴ": "아니",
+    
+    # 인터넷 슬랭 및 신조어
+    "갑분싸": "갑자기 분위기 싸해짐", "금사빠": "금방 사랑에 빠짐", "남사친": "남자 사이 친구",
+    "여사친": "여자 사이 친구", "썸남": "썸 타는 남자", "썸녀": "썸 타는 여자",
+    "오바": "과하다", "헐": "놀람", "대박": "놀람", "쩔어": "멋있다",
+    "킹받네": "짜증난다", "킹받아": "짜증난다", "빡쳐": "화난다", "열받아": "화난다",
+    "개빡": "매우 화남", "개열": "매우 화남", "빡침": "화남",
+    "잼": "재미", "노잼": "재미없음", "꿀": "좋음", "개꿀": "매우 좋음",
+    "간지": "멋있음", "쩐다": "멋있다", "쫄": "무서움",
+    
+    # 줄임말 및 축약어
+    "ㅇㄱㄹㅇ": "이거 레알", "레알": "진짜", "레알로": "진짜로", "리얼": "진짜",
+    "진챠": "진짜", "진짜루": "진짜로", "지짜": "진짜", "쫌": "좀",
+    "뭔데": "뭔데", "모르겠어": "모르겠어", "ㅁㄹ": "몰라", "모르겠음": "모르겠어",
+    "ㄱㄷ": "기대", "ㄱㅊ": "괜찮아", "ㄴㅅ": "노상관", "ㅇㅈ": "인정",
+    
+    # 감정 표현
+    "짱": "좋음", "쩔다": "좋다", "굿": "좋음", "나이스": "좋음",
+    "완전": "매우", "진심": "정말", "진짬": "진짜", "마자": "맞아",
+    "인정": "맞다", "ㅇㅈ": "인정", "ㄹㅇ": "레알", "ㄱㄷ": "기대",
+    
+    # 혐오 표현 및 비하 용어
+    "급식": "중고생 비하", "애새끼": "어린이 비하", "찐따": "왕따", "느금": "너금",
+    "좆": "욕설", "좆같": "욕설", "시바": "욕설", "시팔": "욕설", "씨발": "욕설",
+    "개새": "욕설", "개같": "욕설", "개년": "욕설", "년": "욕설",
+    "놈": "사람", "자식": "사람", "개자식": "욕설", "쓰레기": "나쁨",
+    
+    # 오타 및 맞춤법 교정
+    "되": "돼", "되다": "되다", "되네": "되네", "되는": "되는", "됨": "됨",
+    "됬": "됐", "됬어": "됐어", "됬다": "됐다", "됬네": "됐네",
+    "안되": "안돼", "못되": "못돼", "할수있다": "할 수 있다",
+    "할수없다": "할 수 없다", "되있다": "돼있다", "어케": "어떻게",
+    "왜케": "왜 이렇게", "뭐라구": "뭐라고", "그렇구나": "그렇구나",
+    "그래구": "그래고", "맞구": "맞고", "있구": "있고",
+    
+    # 음성 변화 및 방언
+    "그러케": "그렇게", "머야": "뭐야", "몰라": "몰라", "뭔가": "뭔가",
+    "그런감": "그런 감", "이런감": "이런 감", "거시기": "그것",
+    "저기": "저기", "거기": "거기", "여기": "여기",
+    
+    # 강조 표현
+    "개": "매우", "존": "매우", "졸": "매우", "진짜": "매우", "정말": "매우",
+    "엄청": "매우", "완전": "매우", "진심": "매우", "개박": "매우",
+    "개쩔": "매우 좋음", "개좋": "매우 좋음", "개나쁨": "매우 나쁨",
+    
+    # 최신 인터넷 용어
+    "갓": "최고", "띵": "명작", "띵곡": "명곡", "띵작": "명작",
+    "각": "예상", "빼박": "확실", "팩트": "사실", "펙트": "사실",
+    "뻔펀": "뻔한", "아몰": "아몰랑", "모름": "몰라", "뭣": "뭐",
+    
+    # 게임/온라인 용어
+    "노답": "답이 없다", "답정": "답정너", "현실": "현실적", "가능": "가능",
+    "불가": "불가능", "개념": "좋음", "무개념": "나쁨", "센스": "좋음",
+    
+    # 감탄사 및 추임새
+    "오우": "놀람", "와우": "놀람", "우와": "놀람", "에이": "아쉬움",
+    "어머": "놀람", "허허": "웃음", "크크": "웃음", "푸하하": "웃음",
+    "아하": "이해", "아하하": "웃음", "흠": "생각", "음": "생각",
+    
+    # 부정적 감정
+    "짜증": "짜증", "빡": "화남", "열받": "화남", "스트레스": "스트레스",
+    "빡돔": "화남", "열폭": "화남", "뻘줌": "화남", "멘붕": "당황",
+    "우울": "우울", "답답": "답답", "빡침": "화남",
+}
 
-
-def correct_spelling_and_spacing(text):
-    """PyTorch 기반 모델을 사용하여 맞춤법 및 띄어쓰기를 교정합니다."""
-    if not SPELLING_MODEL_LOADED or not isinstance(text, str) or not text:
-        return text
-
-    try:
-        input_text = "spell: " + text
-        input_ids = spelling_tokenizer.encode(
-            input_text, return_tensors="pt", max_length=256, truncation=True
-        ).to(device)
-
-        outputs = spelling_model.generate(
-            input_ids, max_length=256, num_beams=5, early_stopping=True
-        )
-
-        corrected_text = spelling_tokenizer.decode(outputs[0], skip_special_tokens=True)
-        return corrected_text
-    except Exception:
-        return text
-
+# 속도 향상을 위해 slang_dic의 모든 키를 하나의 정규식으로 컴파일
+slang_pattern = re.compile(
+    "|".join(re.escape(key) for key in sorted(slang_dic.keys(), key=len, reverse=True))
+)
 
 def preprocess(text):
-    """PyTorch 맞춤법/띄어쓰기 교정 및 정규식을 사용한 전처리 함수."""
+    """
+    신조어 사전, 'ㅗ' 특수 처리, 정규식을 사용한 최종 전처리 함수.
+    """
     if not isinstance(text, str):
         return ""
+    
+    # 1단계: 컴파일된 패턴을 사용하여 신조어/오타 등 일괄 변환
+    text = slang_pattern.sub(lambda m: slang_dic[m.group(0)], text)
 
-    # 1단계: PyTorch 모델을 이용한 맞춤법 및 띄어쓰기 교정
-    text = correct_spelling_and_spacing(text)
+    # 2단계: 단독으로 사용되는 'ㅗ' 한 글자만 '모욕'으로 안전하게 치환
+    text = re.sub(r'(^|\s)[ㅗ]($|\s)', ' 모욕 ', text)
 
-    # 2단계: 단독 사용 'ㅗ' 처리 및 불필요한 특수 문자 제거
-    text = re.sub(r"(^|\s)[ㅗ]($|\s)", " 모욕 ", text)
-    text = re.sub(r"[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9.,!?&\s]", " ", text)
-
-    # 3단계: 최종적으로 여러 개의 공백을 하나로 정리
-    text = re.sub(r"\s+", " ", text).strip()
-
+    # 3단계: 정규식을 이용한 최종 노이즈 제거 (& 문자는 보존)
+    text = re.sub(r'[^ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9.,!?&\s]', ' ', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    
     return text
 
-
 def main():
-    """CSV와 TXT 파일을 모두 전처리하고 기존 파일을 덮어씁니다."""
-    dataset_dir = "../NIKL_AU_2023_COMPETITION_v1.0"
-    filenames = ["train.csv", "dev.csv", "test.csv", "combined.txt"]
-
+    """데이터셋을 전처리하고 기존 CSV 파일을 덮어씁니다."""
+    dataset_dir = '../NIKL_AU_2023_COMPETITION_v1.0'
+    filenames = ['train.csv', 'dev.csv', 'test.csv']
+    
     for filename in filenames:
         file_path = os.path.join(dataset_dir, filename)
         if not os.path.exists(file_path):
             print(f"경고: {file_path}를 찾을 수 없습니다. 건너뜁니다.")
             continue
+        
+        print(f"--- 전처리 시작: {file_path} ---")
+        df = pd.read_csv(file_path)
+        
+        #  데이터의 소문자 변환, 특수 문자 제거, 불용어 제거 등 데이터 정제 작업. progress_apply에 tqdb과 비슷한기능
+        df['input'] = df['input'].progress_apply(preprocess)
+        
+        df.dropna(subset=['input'], inplace=True)
+        df = df[df['input'].str.len() > 0]
+        
+        df.to_csv(file_path, index=False, encoding='utf-8')
+        print(f"--- 전처리 컷! 그리고 저장: {file_path} ---")
 
-        print(f"--- 전처리 시작 (Slang 사전 제거 버전): {file_path} ---")
-
-        file_extension = os.path.splitext(filename)[1].lower()
-
-        if file_extension == ".csv":
-            df = pd.read_csv(file_path)
-            df["input"] = df["input"].progress_apply(preprocess)
-            df.dropna(subset=["input"], inplace=True)
-            df = df[df["input"].str.len() > 0]
-            df.to_csv(file_path, index=False, encoding="utf-8")
-
-        elif file_extension == ".txt":
-            with open(file_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-
-            temp_df = pd.DataFrame(lines, columns=["input"])
-            processed_lines = temp_df["input"].progress_apply(preprocess)
-            processed_lines = processed_lines[processed_lines.str.len() > 0]
-
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write("\n".join(processed_lines))
-
-        else:
-            print(f"경고: 지원하지 않는 파일 형식입니다: {filename}. 건너뜁니다.")
-            continue
-
-        print(f"--- 전처리 완료 및 저장: {file_path} ---")
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
