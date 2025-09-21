@@ -111,6 +111,8 @@ class OptimizedTrainer(Trainer):
             lr=self.args.learning_rate,
             eps=1e-8,
         )
+        # 'NoneType' object has no attribute 'param_groups' 오류 해결책으로 아래 한줄 추가
+        self.optimizer = optimizer
         return optimizer
 
     def create_scheduler(
