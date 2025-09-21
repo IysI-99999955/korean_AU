@@ -302,7 +302,7 @@ def run_optimized_mlm_pretraining(config: OptimizedMLMConfig):
         save_strategy="steps",
         save_steps=config.save_steps,
         save_total_limit=config.save_total_limit,
-        evaluation_strategy="steps" if lm_eval_dataset else "no",
+        eval_strategy="steps" if lm_eval_dataset else "no",
         eval_steps=config.eval_steps if lm_eval_dataset else None,
         # 성능 최적화
         fp16=config.fp16,
