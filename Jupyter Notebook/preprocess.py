@@ -1,7 +1,7 @@
 # preprocess.py (전체 사전 포함)  5차 수정..
 import os
 
-os.environ["XLA_FLAGS"] = "--xla_gpu_cuda_data_dir=/usr/local/cuda"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import pandas as pd
 import os
