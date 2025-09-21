@@ -222,7 +222,7 @@ def run_optimized_mlm_pretraining(config: OptimizedMLMConfig):
         num_proc=config.preprocessing_num_proc,
         remove_columns=train_dataset.column_names,
         cache_file_name=os.path.join(
-            cache_dir, f"{config.dataset_cache_file_name}_train_tokenized"
+            cache_dir, f"{config.dataset_cache_file_name}_train_tokenized.arrow"
         ),
         desc="토크나이징 훈련 데이터",
         load_from_cache_file=True,  # 캐시 파일이 있으면 로드
@@ -234,7 +234,7 @@ def run_optimized_mlm_pretraining(config: OptimizedMLMConfig):
         batched=True,
         num_proc=config.preprocessing_num_proc,
         cache_file_name=os.path.join(
-            cache_dir, f"{config.dataset_cache_file_name}_train_grouped"
+            cache_dir, f"{config.dataset_cache_file_name}_train_grouped.arrow"
         ),
         desc="그룹화 훈련 데이터",
     )
@@ -247,7 +247,7 @@ def run_optimized_mlm_pretraining(config: OptimizedMLMConfig):
             num_proc=config.preprocessing_num_proc,
             remove_columns=eval_dataset.column_names,
             cache_file_name=os.path.join(
-                cache_dir, f"{config.dataset_cache_file_name}_eval_tokenized"
+                cache_dir, f"{config.dataset_cache_file_name}_eval_tokenized.arrow"
             ),
             desc="토크나이징 검증 데이터",
         )
@@ -257,7 +257,7 @@ def run_optimized_mlm_pretraining(config: OptimizedMLMConfig):
             batched=True,
             num_proc=config.preprocessing_num_proc,
             cache_file_name=os.path.join(
-                cache_dir, f"{config.dataset_cache_file_name}_eval_grouped"
+                cache_dir, f"{config.dataset_cache_file_name}_eval_grouped.arrow"
             ),
             desc="그룹화 검증 데이터",
         )
