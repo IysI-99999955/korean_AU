@@ -66,6 +66,8 @@ def load_tokenizer_and_model_for_train(args):
 
 def load_model_for_inference(model_name, model_dir):
     """추론(infer)에 필요한 모델과 토크나이저 load"""
+
+    print("--- 추론을 위해 '{model_dir}'에서 모델과 토크나이저를 로드 ing ---")
     # load tokenizer
     Tokenizer_NAME = model_name
     tokenizer = AutoTokenizer.from_pretrained(Tokenizer_NAME)
@@ -100,6 +102,9 @@ def load_model_for_inference(model_name, model_dir):
     ## load my model
     model = AutoModelForSequenceClassification.from_pretrained(model_dir)
 
+    # CUDA 오류로 내용 추가.
+    model.resize_token_embeddings(len(tokenizer))
+    print("--- 모델과 토크나이저 사이즈 조정 완료. ---")
     return tokenizer, model
 
 
