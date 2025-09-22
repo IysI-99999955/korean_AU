@@ -24,19 +24,19 @@ logger = logging.getLogger(__name__)
 # ====================================================================
 @dataclass
 class OptimizedMLMConfig:
-    base_model_name: str = "klue/bert-base"
+    base_model_name: str = "beomi/KcELECTRA-base-v2022" # 이전 모델: klue/bert-base
     txt_file_path: str = "../NIKL_AU_2023_COMPETITION_v1.0/combined.txt"
     output_model_path: str = "../mlm_finetuned_model"
     block_size: int = 512
     epochs: int = 3
-    train_batch_size: int = 32
+    train_batch_size: int = 4
     eval_batch_size: int = 64
-    gradient_accumulation_steps: int = 2
-    learning_rate: float = 5e-5
+    gradient_accumulation_steps: int = 8
+    learning_rate: float = 3e-5
     weight_decay: float = 0.01
     warmup_ratio: float = 0.1
     max_grad_norm: float = 1.0
-    fp16: bool = True
+    fp16: bool = False # default: True. klue/bert-base 시에는 활성화.
     dataloader_num_workers: int = 8
     dataloader_pin_memory: bool = True
     preprocessing_num_proc: int = 16

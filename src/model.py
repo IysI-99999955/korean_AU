@@ -15,6 +15,22 @@ from transformers import EarlyStoppingCallback
 from transformers.optimization import get_cosine_with_hard_restarts_schedule_with_warmup
 
 
+# ====================================================================
+# [해결책] 저장 오류 해결을 위한 Custom Trainer 클래스
+# ====================================================================
+class ContiguousTrainer(Trainer):
+    def _save(self, output_dir=None, state_dict=None):
+        # 모델의 모든 파라미터를 순회하며 .contiguous()를 호출하여
+        # 메모리 구조를 강제로 재정렬합니다.
+        for name, param in self.model.named_parameters():
+            if not param.is_contiguous():
+                param.data = param.data.contiguous()
+        
+        # 메모리 재정렬이 끝난 후, 원래의 저장 로직을 실행합니다.
+        super()._save(output_dir, state_dict)
+# ====================================================================
+
+
 def load_tokenizer_and_model_for_train(args):
     """학습(train)을 위한 사전학습(pretrained) 토크나이저와 모델을 huggingface에서 load"""
     # load model and tokenizer
@@ -148,7 +164,8 @@ def load_trainer_for_train(args, model, hate_train_dataset, hate_valid_dataset):
     )
     print("--- Set training arguments Done ---")
 
-    trainer = Trainer(
+    # [수정] ContiguousTrainer 쓰지 않으면 복구 할 것. trainer = Trainer(
+    trainer = ContiguousTrainer(
         model=model,  # the instantiated 🤗 Transformers model to be trained
         args=training_args,  # training arguments, defined above
         train_dataset=hate_train_dataset,  # training dataset
